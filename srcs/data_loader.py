@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 from typing import List
 
+# list of column names in the NASA turbofan data
+COL_NAMES = ['unit_number', 'time', 'os_1', 'os_2', 'os_3']
+COL_NAMES += ['sensor_{}'.format(s + 1) for s in range(26)]
 # list of columns to drop
 DROP_COLS = ['os_3', 'sensor_16', 'sensor_19', 'sensor_22',
              'sensor_23', 'sensor_24', 'sensor_25', 'sensor_26']
@@ -10,15 +13,13 @@ DROP_COLS = ['os_3', 'sensor_16', 'sensor_19', 'sensor_22',
 
 def _load_data(input_dir: str):
     """ Load CMAPSS data from .txt files """
-    names = ['unit_number', 'time', 'os_1', 'os_2', 'os_3']
-    names += ['sensor_{}'.format(s + 1) for s in range(26)]
     loaded = {}
     for i in range(4):
         dataset = 'FD_00{}'.format(i + 1)
         f = os.path.join(input_dir, 'train_FD00{}.txt'.format(i + 1))
-        df_train = pd.read_csv(f, sep=' ', names=names)
+        df_train = pd.read_csv(f, sep=' ', names=COL_NAMES)
         f = os.path.join(input_dir, 'test_FD00{}.txt'.format(i + 1))
-        df_test = pd.read_csv(f, sep=' ', names=names)
+        df_test = pd.read_csv(f, sep=' ', names=COL_NAMES)
         f = os.path.join(input_dir, 'RUL_FD00{}.txt'.format(i + 1))
         df_RUL = pd.read_csv(f, names=['RUL'])
 
@@ -31,7 +32,7 @@ def _load_data(input_dir: str):
     return loaded
 
 
-def _calculate_RUL(self, df: pd.DataFrame, df_RUL: pd.DataFrame = None):
+def _calculate_RUL(df: pd.DataFrame, df_RUL: pd.DataFrame = None):
     """ Calculate the RUL of each row in the input df """
     # get the maximum life for each unit
     lifes = {}
@@ -52,7 +53,36 @@ def _calculate_RUL(self, df: pd.DataFrame, df_RUL: pd.DataFrame = None):
 class TurbofanData(object):
     """ Class object for NASA Turbofan Engine data """
     def __init__(self, input_dir: str):
-        _load_data(input_dir)
+        self.data = _load_data(input_dir)
+
+    def _normalize(self, drop_cols: List[str]):
+        """ Normalize the data using min-max scaler """
+        # columns that will be normalized
+        cols = [c for c in COL_NAMES
+                if c not in ['unit_number', 'time', 'RUL'] + drop_cols]
+        # first step is concat the 4 train df
+        to_concat = []
+        for i in range(4):
+            dataset = 'FD_00{}'.format(i + 1)
+            df = self.data[dataset]['df_train'][cols].copy()
+            to_concat.append(df)
+
+        concated_df = pd.concat(to_concat)
+        # second step is to calculate the min and max values in each columns
+        # min max values are calculated using train data only
+        xmin = concated_df.values.min(axis=0)
+        xmax = concated_df.values.max(axis=0)
+        # third step is apply the normalization on both train and test sets
+        for i in range(4):
+            dataset = 'FD_00{}'.format(i + 1)
+            # normalize train df
+            df = self.data[dataset]['df_train'][cols].copy()
+            normalized = (df - xmin) / (xmax - xmin)
+            self.data[dataset]['df_train'][cols] = normalized
+            # normalize test df
+            df = self.data[dataset]['df_test'][cols].copy()
+            normalized = (df - xmin) / (xmax - xmin)
+            self.data[dataset]['df_test'][cols] = normalized
 
     def preprocess(self, drop_cols: List[str] = DROP_COLS):
         """ Preprocess the loaded dataframes """
@@ -75,6 +105,10 @@ class TurbofanData(object):
             self.data[dataset]['df_train']['RUL'] = train_RUL
             self.data[dataset]['df_test']['RUL'] = test_RUL
             print('Finish calculating RUL in {}.'.format(dataset))
+
+        # normalize train and test data sets
+        self._normalize(drop_cols)
+        print('Finish normalizing train and test sets.')
 
     def split_train_val(self, train_p: float, seed: int = 1234):
         """
