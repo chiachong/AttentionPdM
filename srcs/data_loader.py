@@ -84,6 +84,31 @@ class TurbofanData(object):
             normalized = (df - xmin) / (xmax - xmin)
             self.data[dataset]['df_test'][cols] = normalized
 
+    def _to_array(self, sets: str, window_size: int) -> np.ndarray:
+        """ Transform dataframes into arrays """
+        error_mssg = "Argument sets only accept one of ('train', 'val', "\
+                     "'test'), given '{}'".format(sets)
+        assert sets in ('train', 'val', 'test'), error_mssg
+        to_concat = []
+        for i in range(4):
+            dataset = 'FD_00{}'.format(i + 1)
+            unit_grps = self.data[dataset]['df_' + sets].groupby('unit_number')
+            for unit in unit_grps:
+                # ignore columns of 'unit_number' and 'time'
+                array = unit[1].copy().values[:, 2:]
+                num_of_rows = array.shape[0] - window_size + 1
+                # sliding window indexer
+                indexes = (np.expand_dims(np.arange(window_size), 0) + \
+                           np.expand_dims(np.arange(num_of_rows), 0).T)
+                array = array[indexes]
+                to_concat.append(array)
+
+        array = np.concatenate(to_concat)
+        # slice the array into independent and dependent data
+        x, y = array[:, :, :-1], array[:, :, -1]
+        y = np.min(y, axis=-1)
+        return x, y
+
     def preprocess(self, drop_cols: List[str] = DROP_COLS):
         """ Preprocess the loaded dataframes """
         for i in range(4):
@@ -146,31 +171,44 @@ class TurbofanData(object):
                 dataset, len(train_unit), len(total_unit) - len(train_unit)
             ))
 
-    def process_classification(self,
-                               window: int,
-                               fail_in: int,
-                               sets: str) -> np.array:
+    def arrays_for_classification(self,
+                                  sets: str,
+                                  window_size: int,
+                                  fail_in: int) -> np.array:
         """
         This will return two np.array which are independent variables and
-        dependent variables. The dependent variables are either True or False
-        such that if the min(RUL) in the input window size <= fail_in, return
-        True else False.
+        dependent variables. The dependent variables are boolean type,
+        such that if the min(RUL) in the input window size <= fail_in,
+        return True else False.
 
         Args:
-            window: Size of the scanning window for independent variables.
-            fail_in: Failure occur within the specified number of operations.
             sets: Dataset to be processed, one of ('train', 'val', 'test').
+            window_size: Size of the scanning window.
+            fail_in: Failure occur within the specified number of operations.
 
         Returns:
             x: Dependent variable with shape=(num_example, window, num_col)
-            y: Independent variable with shape=(num_example, window, num_col)
+            y: Independent variable with shape=(num_example, )
         """
-        error_mssg = "Argument sets only accept one of ('train', 'val', "\
-                     "'test'), given '{}'".format(sets)
-        assert sets in ('train', 'val', 'test'), error_mssg
-        for i in range(4):
-            dataset = 'FD_00{}'.format(i + 1)
-            unit_grps = self.data[dataset]['df_' + sets].groupby('unit_number')
+        x, y = self._to_array(sets, window_size)
+        y = np.where(y <= fail_in, 1, 0)
+        return x, y
 
-    def process_regression(self):
-        pass
+    def arrays_for_regression(self,
+                              sets: str,
+                              window_size: int) -> np.array:
+        """
+        This will return two np.array which are independent variables and
+        dependent variables. The dependent variables are the last RUL of the
+        respective time series.
+
+        Args:
+            sets: Dataset to be processed, one of ('train', 'val', 'test').
+            window_size: Size of the scanning window.
+
+        Returns:
+            x: Dependent variable with shape=(num_example, window, num_col)
+            y: Independent variable with shape=(num_example, )
+        """
+        x, y = self._to_array(sets, window_size)
+        return x, y.astype(int)
