@@ -172,7 +172,6 @@ class TurbofanData(object):
             ))
 
     def arrays_for_classification(self,
-                                  sets: str,
                                   window_size: int,
                                   fail_in: int) -> np.array:
         """
@@ -182,20 +181,32 @@ class TurbofanData(object):
         return True else False.
 
         Args:
-            sets: Dataset to be processed, one of ('train', 'val', 'test').
             window_size: Size of the scanning window.
             fail_in: Failure occur within the specified number of operations.
 
         Returns:
-            x: Dependent variable with shape=(num_example, window, num_col)
-            y: Independent variable with shape=(num_example, )
+            train_x: Dependent variables in the training data,
+                     shape=(num_example, window, num_col)
+            train_y: Independent variable in the training data,
+                     shape=(num_example, )
+            test_x: Dependent variables in the teting data,
+                    shape=(num_example, window, num_col)
+            test_y: Independent variable in the teting data,
+                    shape=(num_example, )
+            val_x: Dependent variables in the validation data,
+                   shape=(num_example, window, num_col)
+            val_y: Independent variable in the validation data,
+                   shape=(num_example, )
         """
-        x, y = self._to_array(sets, window_size)
-        y = np.where(y <= fail_in, 1, 0)
-        return x, y
+        train_x, train_y = self._to_array('train', window_size)
+        train_y = np.where(train_y <= fail_in, 1, 0)
+        test_x, test_y = self._to_array('test', window_size)
+        test_y = np.where(test_y <= fail_in, 1, 0)
+        val_x, val_y = self._to_array('val', window_size)
+        val_y = np.where(val_y <= fail_in, 1, 0)
+        return train_x, train_y, test_x, test_y, val_x, val_y
 
     def arrays_for_regression(self,
-                              sets: str,
                               window_size: int) -> np.array:
         """
         This will return two np.array which are independent variables and
@@ -203,12 +214,23 @@ class TurbofanData(object):
         respective time series.
 
         Args:
-            sets: Dataset to be processed, one of ('train', 'val', 'test').
             window_size: Size of the scanning window.
 
         Returns:
-            x: Dependent variable with shape=(num_example, window, num_col)
-            y: Independent variable with shape=(num_example, )
+            train_x: Dependent variables in the training data,
+                     shape=(num_example, window, num_col)
+            train_y: Independent variable in the training data,
+                     shape=(num_example, )
+            test_x: Dependent variables in the teting data,
+                    shape=(num_example, window, num_col)
+            test_y: Independent variable in the teting data,
+                    shape=(num_example, )
+            val_x: Dependent variables in the validation data,
+                   shape=(num_example, window, num_col)
+            val_y: Independent variable in the validation data,
+                   shape=(num_example, )
         """
-        x, y = self._to_array(sets, window_size)
-        return x, y.astype(int)
+        train_x, train_y = self._to_array('train', window_size)
+        test_x, test_y = self._to_array('test', window_size)
+        val_x, val_y = self._to_array('val', window_size)
+        return train_x, train_y, test_x, test_y, val_x, val_y
