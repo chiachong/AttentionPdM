@@ -7,8 +7,8 @@ from typing import List
 COL_NAMES = ['unit_number', 'time', 'os_1', 'os_2', 'os_3']
 COL_NAMES += ['sensor_{}'.format(s + 1) for s in range(26)]
 # list of columns to drop
-DROP_COLS = ['os_3', 'sensor_16', 'sensor_19', 'sensor_22',
-             'sensor_23', 'sensor_24', 'sensor_25', 'sensor_26']
+DROP_COLS = ['sensor_16', 'sensor_19', 'sensor_22', 'sensor_23',
+             'sensor_24', 'sensor_25', 'sensor_26']
 
 
 def _load_data(input_dir: str):
