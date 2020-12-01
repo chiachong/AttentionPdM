@@ -5,10 +5,9 @@ from typing import List
 
 # list of column names in the NASA turbofan data
 COL_NAMES = ['unit_number', 'time', 'os_1', 'os_2', 'os_3']
-COL_NAMES += ['sensor_{}'.format(s + 1) for s in range(26)]
+COL_NAMES += ['sensor_{}'.format(s + 1) for s in range(23)]
 # list of columns to drop
-DROP_COLS = ['sensor_16', 'sensor_19', 'sensor_22', 'sensor_23',
-             'sensor_24', 'sensor_25', 'sensor_26']
+DROP_COLS = ['sensor_16', 'sensor_19', 'sensor_22', 'sensor_23']
 
 
 def _load_data(input_dir: str):
@@ -66,6 +65,8 @@ class TurbofanData(object):
             dataset = 'FD_00{}'.format(i + 1)
             df = self.data[dataset]['df_train'][cols].copy()
             to_concat.append(df)
+            # df = self.data[dataset]['df_test'][cols].copy()
+            # to_concat.append(df)
 
         concated_df = pd.concat(to_concat)
         # second step is to calculate the min and max values in each columns
@@ -93,15 +94,19 @@ class TurbofanData(object):
         for i in range(4):
             dataset = 'FD_00{}'.format(i + 1)
             unit_grps = self.data[dataset]['df_' + sets].groupby('unit_number')
-            for unit in unit_grps:
+            for _, unit in unit_grps:
                 # ignore columns of 'unit_number' and 'time'
-                array = unit[1].copy().values[:, 2:]
+                array = unit.copy().values[:, 2:]
                 num_of_rows = array.shape[0] - window_size + 1
                 # sliding window indexer
                 indexes = (np.expand_dims(np.arange(window_size), 0) + \
                            np.expand_dims(np.arange(num_of_rows), 0).T)
                 array = array[indexes]
                 to_concat.append(array)
+                # testing the validity of time series arrays
+                # for j in range(1, len(array)):
+                #     compare = array[j][:window_size - 1] == array[j - 1][1:]
+                #     assert compare.all(), 'Error in time series array'
 
         array = np.concatenate(to_concat)
         # slice the array into independent and dependent data
@@ -109,7 +114,8 @@ class TurbofanData(object):
         y = np.min(y, axis=-1)
         return x, y
 
-    def preprocess(self, drop_cols: List[str] = DROP_COLS):
+    def preprocess(self, drop_cols: List[str] = DROP_COLS,
+                   normalize: bool = True, clip_RUL: int = None):
         """ Preprocess the loaded dataframes """
         for i in range(4):
             dataset = 'FD_00{}'.format(i + 1)
@@ -126,14 +132,20 @@ class TurbofanData(object):
             df_RUL = self.data[dataset]['df_RUL']
             train_RUL = _calculate_RUL(df_train)
             test_RUL = _calculate_RUL(df_test, df_RUL)
+            # clip the maximum RUL to a certain value
+            if clip_RUL is not None:
+                train_RUL = np.clip(train_RUL, None, clip_RUL)
+                test_RUL = np.clip(test_RUL, None, clip_RUL)
+
             # add RUL to the dataframes
             self.data[dataset]['df_train']['RUL'] = train_RUL
             self.data[dataset]['df_test']['RUL'] = test_RUL
             print('Finish calculating RUL in {}.'.format(dataset))
 
         # normalize train and test data sets
-        self._normalize(drop_cols)
-        print('Finish normalizing train and test sets.')
+        if normalize:
+            self._normalize(drop_cols)
+            print('Finish normalizing train and test sets.')
 
     def split_train_val(self, train_p: float, seed: int = 1234):
         """
