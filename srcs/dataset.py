@@ -54,6 +54,9 @@ class TurbofanData(object):
     def __init__(self, input_dir: str):
         self.data = _load_data(input_dir)
 
+    def __getitem__(self, dataset):
+        return self.data[dataset]
+
     def _normalize(self, drop_cols: List[str]):
         """ Normalize the data using min-max scaler """
         # columns that will be normalized
