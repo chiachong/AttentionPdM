@@ -377,7 +377,7 @@ def attention_blocks(attn, args):
 
         attn_res = attn
         attn = FeedForward(units=h_unit)(attn)
-        attn = Dropout(0.15)(attn)
+        # attn = Dropout(0.15)(attn)
         attn = Add()([attn, attn_res])
         attn = LayerNormalization()(attn)
         if i < len(attn_layers) - 1:
@@ -397,5 +397,5 @@ def fc_net(x, args):
                 fc = BatchNormalization()(fc)
             fc = Dropout(dropout)(fc)
         else:
-            fc = Dense(fc_layers[i])(fc)
+            fc = Dense(fc_layers[i], activation='linear')(fc)
     return fc
