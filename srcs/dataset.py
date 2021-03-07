@@ -119,7 +119,19 @@ class TurbofanData(object):
 
     def preprocess(self, drop_cols: List[str] = DROP_COLS,
                    normalize: bool = True, clip_RUL: int = None):
-        """ Preprocess the loaded dataframes """
+        """
+        Preprocess the loaded dataframes
+
+        Args:
+            drop_cols (List[str], optional):
+                Columns to drop.
+                Defaults to ['sensor_16', 'sensor_19', 'sensor_22', 'sensor_23']
+            normalize (bool, optional):
+                Set True to normalize the data using Min-Max scaler.
+                Defaults to True.
+            clip_RUL (int, optional):
+                Maximum value of RUL to clip. Defaults to None.
+        """
         for i in range(4):
             dataset = 'FD_00{}'.format(i + 1)
             # drop columns
