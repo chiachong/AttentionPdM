@@ -19,27 +19,36 @@ class AbstractModel(object):
                      "'regression', '{}' is given.".format(task)
         assert task in ['classification', 'regression'], error_mssg
         self.args = args
+        self.load_from = load_from
         self.task = task
-        self.__model = self._build_model(load_from)
+        self._model = None
 
     def train(self,
               train: List[np.ndarray],
               val: List[np.ndarray],
               batch_size: int = 64,
               epochs: int = 100,
-              eval_per_epoch: int = 5):
+              eval_per_epoch: int = 5,
+              learning_rate_decay: float = None):
         """ """
-        self.__model.summary()
+        if self._model is None:
+            self._build_model()
+
+        self._model.summary()
         for i in range(epochs // eval_per_epoch):
-            self.__model.fit(train[0], train[1], batch_size=batch_size,
-                             epochs=(i + 1) * eval_per_epoch, verbose=1,
-                             initial_epoch=i * eval_per_epoch, shuffle=True)
+            self._model.fit(train[0], train[1], batch_size=batch_size,
+                            epochs=(i + 1) * eval_per_epoch, verbose=1,
+                            initial_epoch=i * eval_per_epoch, shuffle=True)
             print('Validation')
-            loss, acc = self.__model.evaluate(val[0], val[1],
-                                              batch_size=batch_size)
+            loss, acc = self._model.evaluate(val[0], val[1],
+                                             batch_size=batch_size)
             print('Total iter: {} - val_loss: {:.4f} - val_acc: {:.4f}'.format(
                 (i + 1) * eval_per_epoch, loss, acc,
             ))
+            if learning_rate_decay is not None:
+                _lr = K.get_value(self._model.optimizer.lr)
+                new_lr = _lr * (1 - learning_rate_decay)
+                K.set_value(self._model.optimizer.lr, new_lr)
 
         # save model
         name = '{}_{}{:02d}{:02d}{:02d}{:02d}.h5'.format(
@@ -47,12 +56,15 @@ class AbstractModel(object):
             datetime.now().day, datetime.now().hour, datetime.now().minute,
         )
         os.makedirs(os.path.join('models', self._model_name), exist_ok=True)
-        self.__model.save(os.path.join('models', self._model_name, name))
+        self._model.save(os.path.join('models', self._model_name, name))
 
     def test(self, test_x, test_y):
         """ """
+        if self._model is None:
+            self._build_model()
+
         print('\nEvaluating...')
-        loss, acc = self.__model.evaluate(test_x, test_y, batch_size=256)
+        loss, acc = self._model.evaluate(test_x, test_y, batch_size=256)
         print('val_loss: {:.4f} - val_acc: {:.4f}'.format(loss, acc,))
         return loss, acc
 
@@ -67,9 +79,9 @@ class AttentionModel(AbstractModel):
         super().__init__(**kwargs)
         self._model_name = 'attention'  # name for saving model checkpoint
 
-    def _build_model(self, load_from):
+    def _build_model(self):
         args = self.args
-        if load_from is None:
+        if self.load_from is None:
             # instantiate model
             input_seq = layers.Input(
                 shape=(args['window_size'], args['feature_dim']),
@@ -108,10 +120,10 @@ class AttentionModel(AbstractModel):
                 'FeedForward': custom_layers.FeedForward,
                 'AttentionLayer': custom_layers.AttentionLayer,
             }
-            model = models.load_model(load_from,
+            model = models.load_model(self.load_from,
                                       custom_objects=custom_objects)
 
-        return model
+        self._model = model
 
 
 class CNNAttentionModel(AbstractModel):
@@ -120,9 +132,9 @@ class CNNAttentionModel(AbstractModel):
         super().__init__(**kwargs)
         self._model_name = 'cnn_attention'  # name for saving model checkpoint
 
-    def _build_model(self, load_from):
+    def _build_model(self):
         args = self.args
-        if load_from is None:
+        if self.load_from is None:
             # instantiate model
             input_seq = layers.Input(
                 shape=(args['window_size'], args['feature_dim']),
@@ -164,9 +176,10 @@ class CNNAttentionModel(AbstractModel):
                 'FeedForward': custom_layers.FeedForward,
                 'AttentionLayer': custom_layers.AttentionLayer,
             }
-            model = models.load_model(load_from,
+            model = models.load_model(self.load_from,
                                       custom_objects=custom_objects)
-        return model
+
+        self._model = model
 
 
 class CNNLSTMModel(AbstractModel):
@@ -175,9 +188,9 @@ class CNNLSTMModel(AbstractModel):
         super().__init__(**kwargs)
         self._model_name = 'cnn_attention'  # name for saving model checkpoint
 
-    def _build_model(self, load_from):
+    def _build_model(self):
         args = self.args
-        if load_from is None:
+        if self.load_from is None:
             # instantiate model
             input_seq = layers.Input(
                 shape=(args['window_size'], args['feature_dim']),
@@ -203,5 +216,6 @@ class CNNLSTMModel(AbstractModel):
             model = models.Model(input_seq, out)
             model.compile(optimizer='adam', metrics=[metrics], loss=loss_func)
         else:
-            model = models.load_model(load_from)
-        return model
+            model = models.load_model(self.load_from)
+
+        self._model = model
