@@ -64,13 +64,23 @@ class AbstractModel(object):
             self._build_model()
 
         print('\nEvaluating...')
-        loss, acc = self._model.evaluate(test_x, test_y, batch_size=256)
-        print('val_loss: {:.4f} - val_acc: {:.4f}'.format(loss, acc,))
-        return loss, acc
+        if self.task == 'regression':
+            loss, mae = self._model.evaluate(test_x, test_y, batch_size=256)
+            print('val_loss: {:.4f} - val_mae: {:.4f}'.format(loss, mae))
+            return loss, mae
+        else:
+            pred = self.predict(test_x)
+            test_y = np.argmax(test_y, axis=-1)
+            target_names = ['Functioning', 'Fail']
+            print(classification_report(test_y, pred, target_names=target_names))
+            report = classification_report(test_y, pred, output_dict=True)['1']
+            return report['precision'], report['recall'], report['f1-score']
 
     def predict(self, test_x):
         """ """
-        # pred = self.__model.
+        pred = self._model.predict(test_x)
+        pred = np.argmax(pred, axis=-1)
+        return pred
 
 
 class AttentionModel(AbstractModel):
