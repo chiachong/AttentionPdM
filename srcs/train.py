@@ -17,9 +17,10 @@ if __name__ == '__main__':
     FAIL_IN = 14  # turbofan engine fails in 14 cycle
     TRAIN_PROPORTION = 3 / 4  # proportion of the training data
     CLIP_RUL = 110
+    MOVING_AVERAGES = [5]
     # load and preprocess data
     data = dataset.TurbofanData(INPUR_DIR)
-    data.preprocess(clip_RUL=CLIP_RUL)
+    data.preprocess(clip_RUL=CLIP_RUL, moving_averages=MOVING_AVERAGES)
     data.split_train_val(TRAIN_PROPORTION)
     if TASK == 'classification':
         arrays = data.arrays_for_classification(WINDOW_SIZE, FAIL_IN)
@@ -66,6 +67,7 @@ if __name__ == '__main__':
         mlflow.log_param('task', TASK)
         mlflow.log_param('train_proportion', TRAIN_PROPORTION)
         mlflow.log_param('clip_RUL', CLIP_RUL)
+        mlflow.log_param('moving_averages', MOVING_AVERAGES)
         mlflow.log_params(args)
 
         # instantiate model
