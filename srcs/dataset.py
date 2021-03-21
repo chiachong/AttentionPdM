@@ -138,6 +138,11 @@ class TurbofanData(object):
                     # add calculated moving averages into df
                     for new_name, new_col in new_cols.items():
                         df[new_name] = new_col
+                    # move the RUL column to the last column
+                    cols = df.columns.tolist()
+                    rul_index = cols.index('RUL')
+                    cols = cols[:rul_index] + cols[rul_index + 1:] + ['RUL']
+                    df = df[cols]
                     # remove na then update into self.data
                     self.data[dataset][f'df_{train_test}'] = df.dropna()
 
