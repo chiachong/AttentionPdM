@@ -196,7 +196,7 @@ class CNNLSTMModel(AbstractModel):
     """ CNN-Attention predictive maintenance model """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._model_name = 'cnn_attention'  # name for saving model checkpoint
+        self._model_name = 'cnn_lstm'  # name for saving model checkpoint
 
     def _build_model(self):
         args = self.args
