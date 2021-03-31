@@ -78,6 +78,9 @@ class AbstractModel(object):
 
     def predict(self, test_x):
         """ """
+        if self._model is None:
+            self._build_model()
+
         pred = self._model.predict(test_x)
         pred = np.argmax(pred, axis=-1)
         return pred
