@@ -1,0 +1,15 @@
+artifact_uri: ./mlruns/0/79bdfe2e5fd94a78a2a2871d625a5a24/artifacts
+end_time: 1618500626583
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+name: ''
+run_id: 79bdfe2e5fd94a78a2a2871d625a5a24
+run_uuid: 79bdfe2e5fd94a78a2a2871d625a5a24
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1618498496087
+status: 3
+tags: []
+user_id: cenozai
