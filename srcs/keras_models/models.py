@@ -2,12 +2,13 @@ import os
 import sys
 import keras
 import numpy as np
+from math import sqrt
 from typing import List
 from keras import models
 from keras import layers
 from keras import backend as K
 from datetime import datetime
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, mean_squared_error
 sys.path.append('srcs')
 from keras_models import custom_layers
 
@@ -66,8 +67,10 @@ class AbstractModel(object):
         print('\nEvaluating...')
         if self.task == 'regression':
             loss, mae = self._model.evaluate(test_x, test_y, batch_size=256)
-            print('val_loss: {:.4f} - val_mae: {:.4f}'.format(loss, mae))
-            return loss, mae
+            pred = self.predict(test_x)
+            rmse = sqrt(mean_squared_error(test_y, pred))
+            print(f'val_loss: {loss:.4f} - val_mae: {mae:.4f} - val_rmse: {rmse:.4f}')
+            return loss, mae, rmse
         else:
             pred = self.predict(test_x)
             test_y = np.argmax(test_y, axis=-1)
@@ -82,7 +85,9 @@ class AbstractModel(object):
             self._build_model()
 
         pred = self._model.predict(test_x)
-        pred = np.argmax(pred, axis=-1)
+        if self.task == 'classification':
+            pred = np.argmax(pred, axis=-1)
+
         return pred
 
 
