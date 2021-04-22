@@ -201,7 +201,7 @@ class CNNAttentionModel(AbstractModel):
 
 
 class CNNLSTMModel(AbstractModel):
-    """ CNN-Attention predictive maintenance model """
+    """ CNN-LSTM predictive maintenance model """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._model_name = 'cnn_lstm'  # name for saving model checkpoint
@@ -218,6 +218,205 @@ class CNNLSTMModel(AbstractModel):
             conv = layers.BatchNormalization()(conv)
             conv = layers.MaxPooling1D(2)(conv)
             lstm_out = layers.LSTM(100)(conv)
+            # output layer
+            out = custom_layers.fc_net(lstm_out, args)
+            # apply softmax for classification task
+            if self.task == 'classification':
+                out = layers.Activation('softmax')(out)
+            else:
+                out = layers.Activation('linear')(out)
+
+            # model compilation
+            loss_func = 'mse' * (self.task == 'regression') +\
+                        'binary_crossentropy' * (self.task == 'classification')
+            metrics = 'mae' * (self.task == 'regression') +\
+                      'accuracy' * (self.task == 'classification')
+            model = models.Model(input_seq, out)
+            model.compile(optimizer='adam', metrics=[metrics], loss=loss_func)
+        else:
+            model = models.load_model(self.load_from)
+
+        self._model = model
+
+
+class CuDNNGRUModel(AbstractModel):
+    """ GRU based (GPU parallelised) predictive maintenance model """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._model_name = 'cudnn_gru'  # name for saving model checkpoint
+
+    def _build_model(self):
+        args = self.args
+        if self.load_from is None:
+            # instantiate model
+            input_seq = layers.Input(
+                shape=(args['window_size'], args['feature_dim']),
+                name='input_sequence',
+            )
+            hidden_layers = args['hidden_layers']
+            return_seq = len(hidden_layers) > 1
+            gru_out = layers.CuDNNGRU(
+                hidden_layers[0], return_sequences=return_seq,
+            )(input_seq)
+            gru_out = layers.Activation('tanh')(gru_out)
+            gru_out = layers.BatchNormalization()(gru_out)
+            for i, unit in enumerate(hidden_layers[1:]):
+                return_seq = i != (len(hidden_layers) - 2)
+                gru_out = layers.CuDNNGRU(
+                    unit, return_sequences=return_seq,
+                )(gru_out)
+                gru_out = layers.Activation('tanh')(gru_out)
+                gru_out = layers.BatchNormalization()(gru_out)
+
+            # output layer
+            out = custom_layers.fc_net(gru_out, args)
+            # apply softmax for classification task
+            if self.task == 'classification':
+                out = layers.Activation('softmax')(out)
+            else:
+                out = layers.Activation('linear')(out)
+
+            # model compilation
+            loss_func = 'mse' * (self.task == 'regression') +\
+                        'binary_crossentropy' * (self.task == 'classification')
+            metrics = 'mae' * (self.task == 'regression') +\
+                      'accuracy' * (self.task == 'classification')
+            model = models.Model(input_seq, out)
+            model.compile(optimizer='adam', metrics=[metrics], loss=loss_func)
+        else:
+            model = models.load_model(self.load_from)
+
+        self._model = model
+
+
+class CuDNNLSTMModel(AbstractModel):
+    """ LSTM based (GPU parallelised) predictive maintenance model """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._model_name = 'cudnn_lstm'  # name for saving model checkpoint
+
+    def _build_model(self):
+        args = self.args
+        if self.load_from is None:
+            # instantiate model
+            input_seq = layers.Input(
+                shape=(args['window_size'], args['feature_dim']),
+                name='input_sequence',
+            )
+            hidden_layers = args['hidden_layers']
+            return_seq = len(hidden_layers) > 1
+            lstm_out = layers.CuDNNLSTM(
+                hidden_layers[0], return_sequences=return_seq,
+            )(input_seq)
+            lstm_out = layers.Activation('tanh')(lstm_out)
+            lstm_out = layers.BatchNormalization()(lstm_out)
+            for i, unit in enumerate(hidden_layers[1:]):
+                return_seq = i != (len(hidden_layers) - 2)
+                lstm_out = layers.CuDNNLSTM(
+                    unit, return_sequences=return_seq,
+                )(lstm_out)
+                lstm_out = layers.Activation('tanh')(lstm_out)
+                lstm_out = layers.BatchNormalization()(lstm_out)
+
+            # output layer
+            out = custom_layers.fc_net(lstm_out, args)
+            # apply softmax for classification task
+            if self.task == 'classification':
+                out = layers.Activation('softmax')(out)
+            else:
+                out = layers.Activation('linear')(out)
+
+            # model compilation
+            loss_func = 'mse' * (self.task == 'regression') +\
+                        'binary_crossentropy' * (self.task == 'classification')
+            metrics = 'mae' * (self.task == 'regression') +\
+                      'accuracy' * (self.task == 'classification')
+            model = models.Model(input_seq, out)
+            model.compile(optimizer='adam', metrics=[metrics], loss=loss_func)
+        else:
+            model = models.load_model(self.load_from)
+
+        self._model = model
+
+
+class GRUModel(AbstractModel):
+    """ GRU based predictive maintenance model """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._model_name = 'gru'  # name for saving model checkpoint
+
+    def _build_model(self):
+        args = self.args
+        if self.load_from is None:
+            # instantiate model
+            input_seq = layers.Input(
+                shape=(args['window_size'], args['feature_dim']),
+                name='input_sequence',
+            )
+            hidden_layers = args['hidden_layers']
+            return_seq = len(hidden_layers) > 1
+            gru_out = layers.GRU(
+                hidden_layers[0], return_sequences=return_seq,
+            )(input_seq)
+            gru_out = layers.Activation('tanh')(gru_out)
+            gru_out = layers.BatchNormalization()(gru_out)
+            for i, unit in enumerate(hidden_layers[1:]):
+                return_seq = i != (len(hidden_layers) - 2)
+                gru_out = layers.GRU(
+                    unit, return_sequences=return_seq,
+                )(gru_out)
+                gru_out = layers.Activation('tanh')(gru_out)
+                gru_out = layers.BatchNormalization()(gru_out)
+
+            # output layer
+            out = custom_layers.fc_net(gru_out, args)
+            # apply softmax for classification task
+            if self.task == 'classification':
+                out = layers.Activation('softmax')(out)
+            else:
+                out = layers.Activation('linear')(out)
+
+            # model compilation
+            loss_func = 'mse' * (self.task == 'regression') +\
+                        'binary_crossentropy' * (self.task == 'classification')
+            metrics = 'mae' * (self.task == 'regression') +\
+                      'accuracy' * (self.task == 'classification')
+            model = models.Model(input_seq, out)
+            model.compile(optimizer='adam', metrics=[metrics], loss=loss_func)
+        else:
+            model = models.load_model(self.load_from)
+
+        self._model = model
+
+
+class LSTMModel(AbstractModel):
+    """ LSTM based predictive maintenance model """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._model_name = 'lstm'  # name for saving model checkpoint
+
+    def _build_model(self):
+        args = self.args
+        if self.load_from is None:
+            # instantiate model
+            input_seq = layers.Input(
+                shape=(args['window_size'], args['feature_dim']),
+                name='input_sequence',
+            )
+            hidden_layers = args['hidden_layers']
+            return_seq = len(hidden_layers) > 1
+            lstm_out = layers.LSTM(
+                hidden_layers[0], return_sequences=return_seq, activation='tanh',
+            )(input_seq)
+            lstm_out = layers.BatchNormalization()(lstm_out)
+            for i, unit in enumerate(hidden_layers[1:]):
+                return_seq = i != (len(hidden_layers) - 2)
+                lstm_out = layers.LSTM(
+                    unit, return_sequences=return_seq, activation='tanh',
+                )(lstm_out)
+                lstm_out = layers.Activation('tanh')(lstm_out)
+                lstm_out = layers.BatchNormalization()(lstm_out)
+
             # output layer
             out = custom_layers.fc_net(lstm_out, args)
             # apply softmax for classification task
