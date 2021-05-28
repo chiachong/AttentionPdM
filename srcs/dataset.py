@@ -1,7 +1,10 @@
 import os
+import sys
 import numpy as np
 import pandas as pd
 from typing import List
+sys.path.append('srcs')
+import utils
 
 # list of column names in the NASA turbofan data
 COL_NAMES = ['unit_number', 'time', 'os_1', 'os_2', 'os_3']
@@ -51,31 +54,17 @@ class TurbofanData(object):
 
     def _to_array(self, sets: str, window_size: int) -> np.ndarray:
         """ Transform dataframes into arrays """
-        error_mssg = "Argument sets only accept one of ('train', 'val', "\
-                     "'test'), given '{}'".format(sets)
-        assert sets in ('train', 'val', 'test'), error_mssg
-        to_concat = []
+        to_concat_x = []
+        to_concat_y = []
         for i in range(4):
             dataset = 'FD_00{}'.format(i + 1)
-            unit_grps = self.data[dataset]['df_' + sets].groupby('unit_number')
-            for _, unit in unit_grps:
-                # ignore columns of 'unit_number' and 'time'
-                array = unit.copy().values[:, 2:]
-                num_of_rows = array.shape[0] - window_size + 1
-                # sliding window indexer
-                indexes = (np.expand_dims(np.arange(window_size), 0) + \
-                           np.expand_dims(np.arange(num_of_rows), 0).T)
-                array = array[indexes]
-                to_concat.append(array)
-                # testing the validity of time series arrays
-                # for j in range(1, len(array)):
-                #     compare = array[j][:window_size - 1] == array[j - 1][1:]
-                #     assert compare.all(), 'Error in time series array'
+            df = self.data[dataset]['df_' + sets]
+            x, y = utils.to_array(df, window_size)
+            to_concat_x.append(x)
+            to_concat_y.append(y)
 
-        array = np.concatenate(to_concat)
-        # slice the array into independent and dependent data
-        x, y = array[:, :, :-1], array[:, :, -1]
-        y = np.min(y, axis=-1)
+        x = np.concatenate(to_concat_x)
+        y = np.concatenate(to_concat_y)
         return x, y
 
     def preprocess(self, drop_cols: List[str] = DROP_COLS,

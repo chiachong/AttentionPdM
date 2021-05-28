@@ -126,7 +126,7 @@ class AttentionModel(AbstractModel):
 
             # model compilation
             loss_func = 'mse' * (self.task == 'regression') +\
-                        'binary_crossentropy' * (self.task == 'classification')
+                        'categorical_crossentropy' * (self.task == 'classification')
             metrics = 'mae' * (self.task == 'regression') +\
                       'accuracy' * (self.task == 'classification')
             model = models.Model(input_seq, out)
@@ -171,7 +171,6 @@ class CNNAttentionModel(AbstractModel):
             else:
                 attn_out = layers.Flatten()(attn_out)
             attn_out = layers.Dropout(0.15)(attn_out)
-            # attn_out = layers.LSTM(100)(conv)
             # output layer
             out = custom_layers.fc_net(attn_out, args)
             # apply softmax for classification task
@@ -182,7 +181,7 @@ class CNNAttentionModel(AbstractModel):
 
             # model compilation
             loss_func = 'mse' * (self.task == 'regression') +\
-                        'binary_crossentropy' * (self.task == 'classification')
+                        'categorical_crossentropy' * (self.task == 'classification')
             metrics = 'mae' * (self.task == 'regression') +\
                       'accuracy' * (self.task == 'classification')
             model = models.Model(input_seq, out)
@@ -228,7 +227,7 @@ class CNNLSTMModel(AbstractModel):
 
             # model compilation
             loss_func = 'mse' * (self.task == 'regression') +\
-                        'binary_crossentropy' * (self.task == 'classification')
+                        'categorical_crossentropy' * (self.task == 'classification')
             metrics = 'mae' * (self.task == 'regression') +\
                       'accuracy' * (self.task == 'classification')
             model = models.Model(input_seq, out)
@@ -278,7 +277,7 @@ class CuDNNGRUModel(AbstractModel):
 
             # model compilation
             loss_func = 'mse' * (self.task == 'regression') +\
-                        'binary_crossentropy' * (self.task == 'classification')
+                        'categorical_crossentropy' * (self.task == 'classification')
             metrics = 'mae' * (self.task == 'regression') +\
                       'accuracy' * (self.task == 'classification')
             model = models.Model(input_seq, out)
@@ -328,7 +327,7 @@ class CuDNNLSTMModel(AbstractModel):
 
             # model compilation
             loss_func = 'mse' * (self.task == 'regression') +\
-                        'binary_crossentropy' * (self.task == 'classification')
+                        'categorical_crossentropy' * (self.task == 'classification')
             metrics = 'mae' * (self.task == 'regression') +\
                       'accuracy' * (self.task == 'classification')
             model = models.Model(input_seq, out)
@@ -378,7 +377,7 @@ class GRUModel(AbstractModel):
 
             # model compilation
             loss_func = 'mse' * (self.task == 'regression') +\
-                        'binary_crossentropy' * (self.task == 'classification')
+                        'categorical_crossentropy' * (self.task == 'classification')
             metrics = 'mae' * (self.task == 'regression') +\
                       'accuracy' * (self.task == 'classification')
             model = models.Model(input_seq, out)
@@ -427,7 +426,7 @@ class LSTMModel(AbstractModel):
 
             # model compilation
             loss_func = 'mse' * (self.task == 'regression') +\
-                        'binary_crossentropy' * (self.task == 'classification')
+                        'categorical_crossentropy' * (self.task == 'classification')
             metrics = 'mae' * (self.task == 'regression') +\
                       'accuracy' * (self.task == 'classification')
             model = models.Model(input_seq, out)
