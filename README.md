@@ -1,6 +1,15 @@
 # AttentionPdM
 Predictive Maintenance Using Attention Model.
 
+## Table of Contents
+* [Prepare Environments](#prepare-environments)
+* [Experiment Records](#experiment-records)
+* [Jupyter Notebooks](#jupyter-notebooks)
+* [About Data](#about-data)
+* [Types of Model](#types-of-model)
+* [How to Train a Model](#how-to-train-a-model)
+* [How to Test a Model](#how-to-test-a-model)
+
 ## Prepare Environments
 The codes were tested and ran on Ubuntu 18.04 using python 3.7.5. 
 Create and set up a python environment by running the following command in the terminal
@@ -18,19 +27,24 @@ source ./activate
 It is important to activate the environment before carry out any process discussed below.
 
 ## Experiment Records
-The experiment records were recorded using [MLFlow](https://mlflow.org/), which can be accessed by running the command in the terminal
+The experiment records were recorded using [MLflow](https://mlflow.org/), which can be accessed by running the command in the terminal
 ```
 mlflow ui
 ```
 
 ## Jupyter Notebooks
-There are some notebooks in this [repo](/srcs/notebooks) for data exploratory analysis. They can be accessed by running the following command in the root of this repo
+There are some notebooks in this [repo](/srcs/notebooks) for data exploratory analysis. 
+Open and execute them by running the following terminal command in the root of this repo
 ```
 jupyter notebook
 ```
 
-## Experiment Data
-The publicly available [data](https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/): NASA's turbodan engine degradation simulation data set was used in the experiments. This dataset consists of four sub-datasets with different operation settings and fault conditions. Each sub-dataset consists of simulated aero turbofan engines run-to-failure data with each engine having 24 sensors. The raw data is already provided in this repo and can be accessed by
+## About Data
+The publicly available [data](https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/):
+ NASA's turbodan engine degradation simulation data set was used in the experiments. 
+This dataset consists of four sub-datasets with different operation settings and fault conditions. 
+Each sub-dataset consists of simulated aero turbofan engines run-to-failure data with each engine having 24 sensors. 
+The raw data is already provided in this repo and can be accessed by
 ```python
 from srcs import dataset
 
@@ -56,9 +70,9 @@ train_x, train_y, test_x, test_y, val_x, val_y = arrays
 
 ## Types of Model
 There are a several models provided in this project, for example:
-* AttentionModel
-* CuDNNGRUModel
-* GRUModel
+* [AttentionModel](#attentionmodel)
+* [GRUModel](#grumodel)
+* [CuDNNGRUModel](#cudnngrumodel)
 
 Note that every model requires a dictionary of condigurations in order to instantiate a model instance.
 ```python
@@ -93,4 +107,72 @@ args = {
 pdm_model = AttentionModel(task='regression', args=args)
 ```
 
+### GRUModel
+GRU based predictive maintenance model.
+```python
+from srcs.keras_models import GRUModel
+
+args = {
+    ...,  # use the examples above
+    'hidden_layers': [100]
+    # this means the model consists of one GRU layer with 100 hidden units
+}
+pdm_model = GRUModel(task='regression', args=args)
+```
+
+### CuDNNGRUModel
+GRU based (GPU parallelized) predictive maintenance model. 
+This model uses the same algorithm as the [GRUModel](#grumodel) however this model enables better GPU parralelization. 
+Hence a gpu is required for this model, please use the GRUModel if no gpu available.
+```python
+from srcs.keras_models import CuDNNGRUModel
+
+args = {
+    ...,  # use the examples above
+    'hidden_layers': [100]
+    # this means the model consists of one GRU layer with 100 hidden units
+}
+pdm_model = CuDNNGRUModel(task='regression', args=args)
+```
+
 ## How to Train a Model
+Assume we already have a dictionary of configurations defined as `args` and we want to train an attention model, then
+```python
+from srcs import dataset
+from srcs.keras_models import AttentionModel
+
+# experiment and model settings
+args = {...}
+
+# load and preprocess data
+data = dataset.TurbofanData('data/CMAPSSData')
+data.preprocess(clip_RUL=100)
+data.split_train_val(3 / 4)
+arrays = data.arrays_for_regression(args['window_size'])
+train_x, train_y, test_x, test_y, val_x, val_y = arrays
+
+# instantiate model instance
+pdm_model = AttentionModel(task='regression', args=args)
+# start the training process
+pdm_model.train(train=[train_x, train_y],
+                val=[val_x, val_y],
+                batch_size=args['batch_size'],
+                epochs=args['epochs'],
+                eval_per_epoch=args['eval_per_epoch'],
+                learning_rate_decay=args['learning_rate_decay'])
+```
+Upon finish model training, a model file `regression_xxxxxxxxxxxx.h5` will be saved into the `./models` folder. 
+In addition, the script [`train.py`](/srcs/train.py) illustrates the example to train model and record the experiment using MLflow.
+
+## How to Test a Model
+Once a model is trained, we can evaluate the model by picking a model checkpoint then
+```python
+model_dir = 'models/attention/regression_xxxxxxxxxxxx.h5'  # eg. trained attention model
+
+# load the trained model
+pdm_model = AttentionModel(task='regression', load_from=model_dir)
+
+# model evaluation using test data loaded in the previous section
+loss, mae, rmse = pdm_model.test(test_x, test_y)
+print(f'Test loss: {loss} - Test MAE: {mae} - Test RMSE: {rmse}')
+```
