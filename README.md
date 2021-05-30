@@ -163,6 +163,10 @@ pdm_model.train(train=[train_x, train_y],
 ```
 Upon finish model training, a model file `regression_xxxxxxxxxxxx.h5` will be saved into the `./models` folder. 
 In addition, the script [`train.py`](/srcs/train.py) illustrates the example to train model and record the experiment using MLflow.
+```
+# run the example training script in the root of repo
+python3 srcs/train.py
+```
 
 ## How to Test a Model
 Once a model is trained, we can evaluate the model by picking a model checkpoint then
