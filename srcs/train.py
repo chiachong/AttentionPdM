@@ -1,9 +1,7 @@
 import sys
-import numpy as np
 import mlflow.keras
 from mlflow.tracking import MlflowClient
 sys.path.append('srcs')
-import utils
 import dataset
 from keras_models import AttentionModel, CuDNNGRUModel, GRUModel
 
