@@ -1,20 +1,21 @@
 # AttentionPdM
-Predictive Maintenance Using Attention Model.
+Predictive maintenance using Attention-based deep learning model. We are using the attention mechanism proposed by Vaswani et al. (2017) in this project.
 
 ## Table of Contents
 * [Prepare Environments](#prepare-environments)
-* [Experiment Records](#experiment-records)
-* [Jupyter Notebooks](#jupyter-notebooks)
 * [About Data](#about-data)
+* [Jupyter Notebooks](#jupyter-notebooks)
+* [Experiment Results](#experiment-results)
 * [Types of Model](#types-of-model)
 * [How to Train a Model](#how-to-train-a-model)
 * [How to Test a Model](#how-to-test-a-model)
+* [References](#references)
 
 ## Prepare Environments
 The codes were tested and ran on Ubuntu 18.04 using python 3.7.5. 
 Create and set up a python environment by running the following command in the terminal
 ```
-# install the gpu version if there is any compatible NVIDIA GPU
+# install the gpu version if there is compatible NVIDIA GPU
 source ./create_env_gpu
 
 # else install the cpu version
@@ -25,19 +26,6 @@ then the environment can be activated by
 source ./activate
 ```
 It is important to activate the environment before carry out any process discussed below.
-
-## Experiment Records
-The experiment records were recorded using [MLflow](https://mlflow.org/), which can be accessed by running the command in the terminal
-```
-mlflow ui
-```
-
-## Jupyter Notebooks
-There are some notebooks in this [repo](/srcs/notebooks) for data exploratory analysis. 
-Open and execute them by running the following terminal command in the root of this repo
-```
-jupyter notebook
-```
 
 ## About Data
 The publicly available [data](https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/):
@@ -65,7 +53,7 @@ data.preprocess(drop_cols=['sensor_16', 'sensor_19', 'sensor_22', 'sensor_23'], 
 
 # split training and validation data sets
 data.split_train_val(train_p=3 / 4)  # randomly pick 3/4 of the unit numbers to be training set,
-                                     # the rest would be validation set
+                                     # the rest would be the validation set
 
 # generate time series arrays for model training and evaluation
 arrays = data.arrays_for_regression(window_size=30)
@@ -75,8 +63,42 @@ train_x, train_y, test_x, test_y, val_x, val_y = arrays
 # where N* is the number of examples in the training, testing or validation sets.
 ```
 
+## Jupyter Notebooks
+There are some notebooks in this [repo](/srcs/notebooks) for data exploratory analysis. 
+Open and execute them by running the following terminal command in the root of the repo
+```
+jupyter notebook
+```
+
+## Experiment Results
+Performance metrics of the attention models with different number of attention layers:
+| Number of Attention layer |  MAE  |  RMSE  |
+| :-----------------------: | ----- | ------ |
+|             1             | 7.33  | 11.45  |
+|             2             | 6.66  | 10.78  |
+|             3             | 7.76  | 11.41  |
+
+Performance metrics of the attention models (2 attention layers) with different window sizes:
+| Window Size |  MAE  |  RMSE  |
+| :---------: | ----- | ------ |
+|     15      | 7.68  | 12.43  |
+|     30      | 6.66  | 10.78  |
+|     45      | 6.63  | 10.69  |
+
+Comparison of the model performances:
+|       Method       |  MAE  |  RMSE  |
+| :----------------: | ----- | ------ |
+| CNN+LSTM [[1]](#1) | 10.20 | 14.30  |
+|    GRU [[3]](#3)   | 6.01  | 10.34  |
+|      Attention     | 6.66  | 10.78  |
+
+The experiment results were recorded using [MLflow](https://mlflow.org/), which can be accessed by running the command in the terminal
+```
+mlflow ui
+```
+
 ## Types of Model
-There are a several models provided in this project, for example:
+There are several models provided in this project, for example:
 * [AttentionModel](#attentionmodel)
 * [GRUModel](#grumodel)
 * [CuDNNGRUModel](#cudnngrumodel)
@@ -187,3 +209,20 @@ pdm_model = AttentionModel(task='regression', load_from=model_dir)
 loss, mae, rmse = pdm_model.test(test_x, test_y)
 print(f'Test loss: {loss} - Test MAE: {mae} - Test RMSE: {rmse}')
 ```
+
+## References
+<a id="1">[1]</a> 
+Pektas, A., & Pektas, E. (2018). A novel scheme for accurate remaining useful life prediction for industrial IoTs by using deep neural network. *International Journal of Artificial Intelligence and Applications (IJAIA)*, *9*(5), 17-25.
+
+<a id="2">[2]</a> 
+Saxena, A., & Goebel, K. (2008). *Prognostics Center - Data Repository*. 
+Retrieved from National Aeronautics and Space Administration (NASA):
+ https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/
+
+<a id="3">[3]</a> 
+Suursalu, S., Kwaspen, P., & Al-Ars, Z. (2017). Predictive maintenance using machine learning methods in petrochemical refineries.
+
+<a id="4">[4]</a> 
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). 
+Attention is all you need. 
+*31st Conference on Neural Information Processing Systems (NIPS 2017)*, (pp. 6000-6010). Long Beach, CA, USA.
