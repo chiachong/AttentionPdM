@@ -51,6 +51,13 @@ from srcs import dataset
 data_dir = 'data/CMAPSSData'
 data = dataset.TurbofanData(data_dir)
 
+# to get the raw dataframes of a sub-dataset
+# generally, df = data['FD_00x']['df_train']
+fd1_train_df = data['FD_001']['df_train']  # dataframe from the train_FD001.txt
+fd2_test_df = data['FD_002']['df_test']  # dataframe from the test_FD002.txt
+fd3_rul_df = data['FD_003']['df_RUL']  # dataframe from the RUL_FD003.txt
+fd4_train_df, fd4_test_df, fd4_rul_df = data['FD_004'].values()  # return the 3 dataframes related to FD004
+
 # preprocess data
 data.preprocess(drop_cols=['sensor_16', 'sensor_19', 'sensor_22', 'sensor_23'],  # list of column names to drop
                 normalize=True,  # set True to normalize data using Min-Max scaler
@@ -79,7 +86,7 @@ Note that every model requires a dictionary of condigurations in order to instan
 args = {
     'window_size': 30,  # size of the scanning window
     'feature_dim': 22,  # number of sensors being used
-    'hidden_layers': ...,  # will be discussed in model explaination
+#     'hidden_layers': ...,  # will be discussed in model explaination
     'fully_connected_layers': [128, 1],  # number of neurons in the dense layers,
                                          # the last number should always be 1
     'global_pool': 'max',  # global pooling, options='max', 'mean', None
