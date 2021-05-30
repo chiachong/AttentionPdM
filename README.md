@@ -44,7 +44,7 @@ The publicly available [data](https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prog
  NASA's turbodan engine degradation simulation data set was used in the experiments. 
 This dataset consists of four sub-datasets with different operation settings and fault conditions. 
 Each sub-dataset consists of simulated aero turbofan engines run-to-failure data with each engine having 24 sensors. 
-The raw data is already provided in this repo and can be accessed by
+The raw data is already provided in this [repo](/data/CMAPSSData) and can be accessed by
 ```python
 from srcs import dataset
 
@@ -53,10 +53,10 @@ data = dataset.TurbofanData(data_dir)
 
 # to get the raw dataframes of a sub-dataset
 # generally, df = data['FD_00x']['df_train']
-fd1_train_df = data['FD_001']['df_train']  # dataframe from the train_FD001.txt
-fd2_test_df = data['FD_002']['df_test']  # dataframe from the test_FD002.txt
-fd3_rul_df = data['FD_003']['df_RUL']  # dataframe from the RUL_FD003.txt
-fd4_train_df, fd4_test_df, fd4_rul_df = data['FD_004'].values()  # return the 3 dataframes related to FD004
+train_df1 = data['FD_001']['df_train']  # dataframe from the train_FD001.txt
+test_df2 = data['FD_002']['df_test']  # dataframe from the test_FD002.txt
+rul_df3 = data['FD_003']['df_RUL']  # dataframe from the RUL_FD003.txt
+train_df4, test_df4, rul_df4 = data['FD_004'].values()  # return the 3 dataframes related to FD004
 
 # preprocess data
 data.preprocess(drop_cols=['sensor_16', 'sensor_19', 'sensor_22', 'sensor_23'],  # list of column names to drop
