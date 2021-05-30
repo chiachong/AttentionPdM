@@ -1,5 +1,6 @@
 # AttentionPdM
-Predictive maintenance using Attention-based deep learning model. We are using the attention mechanism proposed by Vaswani et al. (2017) in this project.
+The ability to predict the remaining useful life (RUL) of a machine plays an important role in the safety and competency of the industrial system. 
+In this project, a deep learning model based on the attention mechanism (Vaswani et al., 2017) was developed to predict the RUL based on the time series machine degradation data. 
 
 ## Table of Contents
 * [Prepare Environments](#prepare-environments)
