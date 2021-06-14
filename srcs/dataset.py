@@ -1,4 +1,3 @@
-import os
 import sys
 import numpy as np
 import pandas as pd
@@ -16,7 +15,7 @@ DROP_COLS = ['sensor_16', 'sensor_19', 'sensor_22', 'sensor_23']
 class TurbofanData(object):
     """ Class object for NASA Turbofan Engine data """
     def __init__(self, input_dir: str):
-        self.data = _load_data(input_dir)
+        self.data = utils.load_data(input_dir, COL_NAMES)
 
     def __getitem__(self, dataset):
         return self.data[dataset]
@@ -99,8 +98,8 @@ class TurbofanData(object):
             df_train = self.data[dataset]['df_train']
             df_test = self.data[dataset]['df_test']
             df_RUL = self.data[dataset]['df_RUL']
-            train_RUL = _calculate_RUL(df_train)
-            test_RUL = _calculate_RUL(df_test, df_RUL)
+            train_RUL = utils.calculate_RUL(df_train)
+            test_RUL = utils.calculate_RUL(df_test, df_RUL)
             # clip the maximum RUL to a certain value
             if clip_RUL is not None:
                 train_RUL = np.clip(train_RUL, None, clip_RUL)
@@ -122,7 +121,7 @@ class TurbofanData(object):
                     df = self.data[dataset][f'df_{train_test}'].copy()
                     new_cols = {}
                     for w_size in moving_averages:
-                        new = _calculate_moving_average(df, w_size, col_names)
+                        new = utils.calculate_moving_average(df, w_size, col_names)
                         new_cols.update(new)
                     # add calculated moving averages into df
                     for new_name, new_col in new_cols.items():
@@ -241,52 +240,3 @@ class TurbofanData(object):
         test_x, test_y = self._to_array('test', window_size)
         val_x, val_y = self._to_array('val', window_size)
         return train_x, train_y, test_x, test_y, val_x, val_y
-
-
-def _load_data(input_dir: str):
-    """ Load CMAPSS data from .txt files """
-    loaded = {}
-    for i in range(4):
-        dataset = 'FD_00{}'.format(i + 1)
-        f = os.path.join(input_dir, 'train_FD00{}.txt'.format(i + 1))
-        df_train = pd.read_csv(f, sep=' ', names=COL_NAMES)
-        f = os.path.join(input_dir, 'test_FD00{}.txt'.format(i + 1))
-        df_test = pd.read_csv(f, sep=' ', names=COL_NAMES)
-        f = os.path.join(input_dir, 'RUL_FD00{}.txt'.format(i + 1))
-        df_RUL = pd.read_csv(f, names=['RUL'])
-
-        loaded[dataset] = {'df_train': df_train,
-                           'df_test': df_test,
-                           'df_RUL': df_RUL}
-
-    print('Datasets {} are loaded succesfully!'.format(
-          ', '.join(loaded.keys())))
-    return loaded
-
-
-def _calculate_RUL(df: pd.DataFrame, df_RUL: pd.DataFrame = None):
-    """ Calculate the RUL of each row in the input df """
-    # get the maximum life for each unit
-    lifes = {}
-    # Max life could be calculated from train df since they are
-    # run-to-failure data
-    for unit_num in df['unit_number'].unique():
-        max_life = df['time'].loc[df['unit_number'] == unit_num].max()
-        lifes[unit_num] = max_life
-    # While max life of test data are determined by adding RUL in df_RUL
-    if df_RUL is not None:
-        for i, rul in df_RUL.itertuples():
-            lifes[i + 1] += rul
-
-    # RUL = max_life - time_now
-    return df['unit_number'].apply(lambda n: lifes[n]) - df['time']
-
-
-def _calculate_moving_average(df, window: int, col_names: List[str]) -> dict:
-    """ Calculate moving averages with given window size. """
-    new_cols = {}
-    for col_name in col_names:
-        new_col = df[col_name].rolling(window).mean()
-        new_cols[f'{col_name}_ma_{window}'] = new_col
-
-    return new_cols

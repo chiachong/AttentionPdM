@@ -1,6 +1,57 @@
+import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from typing import List
+
+
+def calculate_moving_average(df, window: int, col_names: List[str]) -> dict:
+    """ Calculate moving averages with given window size. """
+    new_cols = {}
+    for col_name in col_names:
+        new_col = df[col_name].rolling(window).mean()
+        new_cols[f'{col_name}_ma_{window}'] = new_col
+
+    return new_cols
+
+
+def calculate_RUL(df: pd.DataFrame, df_RUL: pd.DataFrame = None):
+    """ Calculate the RUL of each row in the input df """
+    # get the maximum life for each unit
+    lifes = {}
+    # Max life could be calculated from train df since they are
+    # run-to-failure data
+    for unit_num in df['unit_number'].unique():
+        max_life = df['time'].loc[df['unit_number'] == unit_num].max()
+        lifes[unit_num] = max_life
+    # While max life of test data are determined by adding RUL in df_RUL
+    if df_RUL is not None:
+        for i, rul in df_RUL.itertuples():
+            lifes[i + 1] += rul
+
+    # RUL = max_life - time_now
+    return df['unit_number'].apply(lambda n: lifes[n]) - df['time']
+
+
+def load_data(input_dir: str, col_names: List[str]):
+    """ Load CMAPSS data from .txt files """
+    loaded = {}
+    for i in range(4):
+        dataset = 'FD_00{}'.format(i + 1)
+        f = os.path.join(input_dir, 'train_FD00{}.txt'.format(i + 1))
+        df_train = pd.read_csv(f, sep=' ', names=col_names)
+        f = os.path.join(input_dir, 'test_FD00{}.txt'.format(i + 1))
+        df_test = pd.read_csv(f, sep=' ', names=col_names)
+        f = os.path.join(input_dir, 'RUL_FD00{}.txt'.format(i + 1))
+        df_RUL = pd.read_csv(f, names=['RUL'])
+
+        loaded[dataset] = {'df_train': df_train,
+                           'df_test': df_test,
+                           'df_RUL': df_RUL}
+
+    print('Datasets {} are loaded successfully!'.format(
+          ', '.join(loaded.keys())))
+    return loaded
 
 
 def one_hot_encode(labels, n_classes):
