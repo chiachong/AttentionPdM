@@ -221,7 +221,7 @@ Retrieved from National Aeronautics and Space Administration (NASA):
  https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/
 
 <a id="3">[3]</a> 
-Suursalu, S., Kwaspen, P., & Al-Ars, Z. (2017). Predictive maintenance using machine learning methods in petrochemical refineries.
+Suursalu, S. (2017). Predictive maintenance using machine learning methods in petrochemical refineries. (Unpublished master's thesis). Delft University of Technology, Delft, Netherlands.
 
 <a id="4">[4]</a> 
 Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). 
