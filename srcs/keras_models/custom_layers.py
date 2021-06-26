@@ -53,18 +53,20 @@ class LayerNormalization(keras.layers.Layer):
                  gamma_constraint=None,
                  beta_constraint=None,
                  **kwargs):
-        """Layer normalization layer
+        """
+        Layer normalization layer
         See: [Layer Normalization](https://arxiv.org/pdf/1607.06450.pdf)
-        :param center: Add an offset parameter if it is True.
-        :param scale: Add a scale parameter if it is True.
-        :param epsilon: Epsilon for calculating variance.
-        :param gamma_initializer: Initializer for the gamma weight.
-        :param beta_initializer: Initializer for the beta weight.
-        :param gamma_regularizer: Optional regularizer for the gamma weight.
-        :param beta_regularizer: Optional regularizer for the beta weight.
-        :param gamma_constraint: Optional constraint for the gamma weight.
-        :param beta_constraint: Optional constraint for the beta weight.
-        :param kwargs:
+
+        Args:
+            center: Add an offset parameter if it is True.
+            scale: Add a scale parameter if it is True.
+            epsilon: Epsilon for calculating variance.
+            gamma_initializer: Initializer for the gamma weight.
+            beta_initializer: Initializer for the beta weight.
+            gamma_regularizer: Optional regularizer for the gamma weight.
+            beta_regularizer: Optional regularizer for the beta weight.
+            gamma_constraint: Optional constraint for the gamma weight.
+            beta_constraint: Optional constraint for the beta weight.
         """
         super(LayerNormalization, self).__init__(**kwargs)
         self.supports_masking = True
@@ -136,8 +138,11 @@ class LayerNormalization(keras.layers.Layer):
 
 
 class FeedForward(keras.layers.Layer):
-    """Position-wise feed-forward layer.
-    # Arguments
+    """
+    Position-wise feed-forward layer.
+    See: [Attention is All You Need](https://arxiv.org/pdf/1706.03762.pdf)
+
+    Args:
         units: int >= 0. Dimension of hidden units.
         activation: Activation function to use
         use_bias: Boolean, whether the layer uses a bias vector.
@@ -148,12 +153,12 @@ class FeedForward(keras.layers.Layer):
         kernel_constraint: Constraint function applied to the `kernel` weights matrix.
         bias_constraint: Constraint function applied to the bias vector.
         dropout_rate: 0.0 <= float <= 1.0. Dropout rate for hidden units.
-    # Input shape
+
+    Input shape:
         3D tensor with shape: `(batch_size, ..., input_dim)`.
-    # Output shape
+
+    Output shape:
         3D tensor with shape: `(batch_size, ..., input_dim)`.
-    # References
-        - [Attention is All You Need](https://arxiv.org/pdf/1706.03762.pdf)
     """
 
     def __init__(self,
